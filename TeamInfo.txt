@@ -1,0 +1,103 @@
+=================================================
+Team 010
+Zuliang Guo       email: zguo312@gatech.edu
+William Repking   email: wrepking3@gatech.edu
+Ting Wu           email: twu359@gatech.edu
+Zhenyu Zhang      email: zzhang656@gatech.edu
+=================================================
+
+The S&E Data Warehouse Project is adapted from
+the GT-Online Project to demonstrate the database
+design of CS6400 course project.
+
+=================================================
+SQL query directory:
+
+- index.php:
+            Contains SQL statements to
+            * get counts of the number of stores/manufacturers/products/managers.
+
+- report_1_manufacturer.php:
+            Contains SQL statements to
+            * get statistical details of all manufacturers.
+
+- report_1_drill_down.php:
+            Contains SQL statements to
+            * get all product details of selected manufacturer.
+
+- report_2_category.php:
+            Contains SQL statements to
+            * get statistical details of all categories.
+
+- report_3_gps.php:
+            Contains SQL statements to
+            * get revenue related statistical details of GPS products.
+
+- report_4_store_revenue.php:
+            Contains SQL statements to
+            * get all the states in the database.
+            * get revenue and details of stores in a selected state.
+
+- report_5_ac.php:
+            Contains SQL statements to
+            * get statistical details of transactions of air conditioners on Groundhog Day.
+
+- report_6_state.php:
+            Contains SQL statements to
+            * get all year-month like date in the database.
+            * get statistical detail of the states with highest sold in each category in selected year-month.
+
+- report_6_drill_down.php:
+            Contains SQL statements to
+            * get all statistical detail of stores in selected state.
+
+- report_7_revenue_population.php:
+            Contains SQL statements to
+            * get average revenues of cities in different scales.
+
+- update_1_holiday.php:
+            Contains SQL statements to
+            * get all holiday details in the database.
+            * get holiday details of selected date to check if input date exists in database.
+            * insert new holiday into database with input details.
+            * concatenate new holiday name to existing holiday date.
+            * check if input holiday name is existing on input holiday date.
+
+- update_2_manager.php:
+            Contains no SQL statement.
+
+- update_2_manager_view.php:
+            Contains SQL statements to
+            * get details of selected manager.
+
+- update_2_manager_edit.php:
+            Contains SQL statements to
+            * get details of selected manager.
+            * get details of selected manager and assigned store ID to check whether this assignment exists.
+            * insert new store assignment relationship into database.
+            * delete selected store assignment relationship in database.
+            * change manager status between "A" (active) and "I" (inactive).
+            * get details of selected manager after edition.
+
+- update_2_manager_add.php:
+            Contains SQL statements to
+            * get details of selected manager.
+            * get details of selected manager to check whether email address exists in database.
+            * insert new manager into database, different status depends on different inputs.
+            * get details of selected manager after edition.
+
+- update_2_manager_delete.php:
+            Contains SQL statements to
+            * get details of selected manager to check whether selected manager is inactive.
+            * get details of selected manager after edition and canceling.
+
+- update_3_population.php:
+            Contains no SQL statement.
+
+- update_3_population_change.php:
+            Contains SQL statements to
+            * get population details of selected city and state.
+            * update population of selected city and state.
+            * get population details of selected city and state after edition and canceling.
+
+=================================================

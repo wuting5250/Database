@@ -1,0 +1,247 @@
+=================================================
+Team 010
+Zuliang Guo       email: zguo312@gatech.edu
+William Repking   email: wrepking3@gatech.edu
+Ting Wu           email: twu359@gatech.edu
+Zhenyu Zhang      email: zzhang656@gatech.edu
+=================================================
+
+SQL query summary:
+
+- index.php:
+
+            SELECT COUNT(store_id) AS store_count from Store
+
+            SELECT COUNT(manufacturer) AS manufacturer_count FROM Manufacturer
+
+            SELECT COUNT(product_id) AS product_count FROM Product
+
+            SELECT COUNT(email) AS email_count FROM Manager
+
+
+- report_1_manufacturer.php:
+
+            SELECT Product.manufacturer, COUNT(Product.product_id) AS product_count, ROUND(AVG(Product.retail_price), 2) AS avg_price, MAX(Product.retail_price) AS max_price,
+            MIN(Product.retail_price) AS min_price
+            FROM Product
+            GROUP BY Product.manufacturer
+            ORDER BY avg_price DESC LIMIT 100
+
+
+- report_1_drill_down.php:
+
+            SELECT Manufacturer.max_discount
+            FROM Manufacturer
+            WHERE Manufacturer.manufacturer='$manufacturer'
+            LIMIT 1
+
+            SELECT a.product_id, a.product_name, GROUP_CONCAT(b.category SEPARATOR ', ') AS categories, a.retail_price
+            FROM Product a
+            JOIN ProductCategory b on a.product_id = b.product_id
+            WHERE a.manufacturer = '$manufacturer'
+            GROUP BY a.product_id "
+            ORDER BY a.retail_price DESC
+
+
+- report_2_category.php:
+
+            SELECT ProductCategory.category AS category, count(ProductCategory.product_id) AS product_number, count(distinct Product.manufacturer) AS manufacturers, ROUND(avg(Product.retail_price), 2) AS avg_price
+            FROM ProductCategory
+            LEFT JOIN Product ON ProductCategory.product_id = Product.product_id
+            GROUP BY ProductCategory.category
+            ORDER BY ProductCategory.category ASC
+
+
+- report_3_gps.php:
+
+            SELECT product_id, product_name, retail_price, SUM(quantity) AS total_quantity_sold,
+            SUM(IF(on_sale = 1, quantity, 0)) AS quantity_sold_at_discount,
+            SUM(IF(on_sale = 0, quantity, 0)) AS quantity_sold_at_retail,
+            ROUND(SUM(IF(on_sale = 1, actual_price, 0) * quantity), 2) AS total_discount_revenue,
+            ROUND(SUM(IF(on_sale = 0, retail_price, 0) * quantity), 2) AS total_retail_revenue,
+            ROUND(SUM(actual_price * quantity), 2) AS actual_revenue,
+            ROUND(SUM(IF(on_sale = 0, quantity, quantity * 0.75) * retail_price), 2) AS predicted_revenue,
+            ROUND(SUM(actual_price * quantity - IF(on_sale = 0, quantity, quantity * 0.75) * retail_price), 2) AS revenue_difference
+            FROM (SELECT a.product_id, a.product_name, c.quantity, IF(d.sale_date IS NULL, 0, 1) AS on_sale, a.retail_price,
+            IF(d.sale_date IS NULL, a.retail_price, d.sale_price) AS actual_price
+            FROM Product a
+            JOIN Manufacturer b on a.manufacturer = b.manufacturer
+            JOIN Transaction c on a.product_id = c.product_id
+            LEFT JOIN Sale d on c.product_id = d.product_id AND c.sold_date = d.sale_date
+            JOIN ProductCategory e on a.product_id = e.product_id
+            WHERE e.category = "GPS") all_rows
+            GROUP BY product_id
+            HAVING ABS(revenue_difference) > 5000
+            ORDER BY revenue_difference DESC
+
+
+- report_4_store_revenue.php:
+
+            SELECT c.store_id, c.street_address, c.city, YEAR(b.sold_date) as revenue_year,
+            SUM(IF(d.sale_date IS NULL, a.retail_price, d.sale_price) * b.quantity) as total_revenue
+            FROM Product a
+            JOIN Transaction b on a.product_id = b.product_id
+            JOIN Store c on b.store_id = c.store_id
+            LEFT JOIN Sale d on b.product_id = d.product_id
+            WHERE c.state = '$selected_state'
+            GROUP BY b.store_id, YEAR(b.sold_date)
+            ORDER BY revenue_year ASC, total_revenue DESC
+
+
+- report_5_ac.php:
+            SELECT c.year, c.total_AC_sold, ROUND(c.avg_AC_daily_sold) as avg_AC_daily_sold, d.AC_Groundhog_Day_sold
+            FROM
+             (SELECT YEAR(a.sold_date) AS year, SUM(a.quantity) AS total_AC_sold, SUM(a.quantity)/365 AS avg_AC_daily_sold
+            FROM Transaction a JOIN ProductCategory b ON a.product_id = b.product_id
+            WHERE b.category = 'Air Conditioner'
+            GROUP BY year) c
+            JOIN (SELECT YEAR(a.sold_date) AS year, SUM(a.quantity) AS AC_Groundhog_Day_sold
+            FROM Transaction a
+            JOIN ProductCategory b ON a.product_id = b.product_id
+            WHERE MONTH(a.sold_date)=2 AND DAY(a.sold_date)=2 AND b.category = 'Air Conditioner'
+            GROUP BY year) d ON  c.year = d.year
+            ORDER BY c.year ASC
+
+
+- report_6_state.php:
+
+            CREATE VIEW totals AS
+            SELECT c.category, b.state, SUM(a.quantity) as top_quantity_sold
+            FROM Transaction a
+            JOIN Store b on a.store_id = b.store_id
+            JOIN ProductCategory c on a.product_id = c.product_id
+            WHERE MONTH(a.sold_date) = 1 AND YEAR(a.sold_date) = 2002
+            GROUP BY c.category, b.state;
+
+            SELECT a.category, a.state, a.top_quantity_sold
+            FROM totals a
+            JOIN (SELECT category, MAX(top_quantity_sold) AS top_quantity_sold
+            FROM totals
+            GROUP BY category) b on a.category = b.category AND a.top_quantity_sold = b.top_quantity_sold
+            ORDER BY a.category ASC, a.state ASC;
+
+            DROP VIEW totals;
+
+
+- report_6_drill_down.php:
+
+            SELECT DISTINCT Store.store_id, Store.street_address, Store.city, Manager.first_name, Manager.last_name, Manager.email
+            FROM Store
+            INNER JOIN StoreManager ON Store.store_id = StoreManager.store_id
+            INNER JOIN Manager on StoreManager.email = Manager.email
+            INNER JOIN Transaction on Store.store_id = Transaction.store_id
+            INNER JOIN ProductCategory on Transaction.product_id = ProductCategory.product_id
+            WHERE Manager.status = \"A\" AND Store.state = '$state' AND ProductCategory.category = '$category' AND Transaction.sold_date LIKE '$yearmonth%'
+            ORDER BY Store.store_id ASC"
+
+
+- report_7_revenue_population.php:
+
+            SELECT YEAR(a.sold_date) AS year,
+                ROUND(SUM(IF(c.city_population < 3700000, IF(d.sale_date IS NULL, e.retail_price, d.sale_price) * a.quantity, NULL))/(SELECT count(*) FROM City WHERE city_population < 3700000), 2) AS avg_small_city_revenue,
+                ROUND(SUM(IF(c.city_population >= 3700000 AND c.city_population < 6700000, IF(d.sale_date IS NULL, e.retail_price, d.sale_price) * a.quantity, NULL))/(SELECT count(*) FROM City WHERE city_population >= 3700000 AND city_population < 6700000), 2) AS avg_medium_city_revenue,
+                ROUND(SUM(IF(c.city_population >= 6700000 AND c.city_population < 9000000, IF(d.sale_date IS NULL, e.retail_price, d.sale_price) * a.quantity, NULL))/(SELECT count(*) FROM City WHERE city_population >= 6700000 AND city_population < 9000000), 2) AS avg_large_city_revenue,
+                ROUND(SUM(IF(c.city_population > 9000000, IF(d.sale_date IS NULL, e.retail_price, d.sale_price) * a.quantity, NULL))/(SELECT count(*) FROM City WHERE city_population > 9000000), 2) AS avg_extra_large_city_revenue
+            FROM Transaction a
+            JOIN Store b ON a.store_id = b.store_id
+            JOIN City c ON b.city = c.city AND b.state = c.state
+            LEFT JOIN Sale d on a.sold_date = d.sale_date AND a.product_id = d.product_id
+            JOIN Product e on a.product_id = e.product_id
+            GROUP BY YEAR(a.sold_date)
+
+
+- update_1_holiday.php:
+            SELECT * From Holiday WHERE Holiday.holiday_date = '$holiday_date'
+
+            INSERT INTO Holiday VALUES ('$holiday_date', '$holiday_name')
+
+            SELECT IF(LOWER(holiday_name) LIKE CONCAT('%',LOWER('$input_holiday_name'),'%'), 'YES', 'NO') as holiday_exists
+            FROM holiday
+            WHERE holiday_date = '$input_holiday_date'
+
+            UPDATE holiday SET holiday_name = CONCAT(holiday_name,', $input_holiday_name') WHERE holiday_date= '$input_holiday_date'
+
+            SELECT holiday_name, holiday_date FROM Holiday
+
+
+- update_2_manager.php:
+            Contains no SQL statement.
+
+
+- update_2_manager_view.php:
+
+            SELECTManager.email,Manager.first_name,Manager.last_name,Manager.status,Storemanager.store_id
+            FROM Manager
+            LEFT OUTER JOIN Storemanager ON Manager.email = Storemanager.email
+            WHERE manager.email = '$email'
+
+
+- update_2_manager_edit.php:
+
+            SELECTManager.email,Manager.first_name,Manager.last_name,Manager.status,Storemanager.store_id
+            FROM Manager
+            LEFT OUTER JOIN Storemanager ON Manager.email = Storemanager.email
+            WHERE manager.email = '$email'
+
+            SELECT * From Storemanager WHERE email = '$email' AND store_id = '$store_id'
+
+            INSERT INTO StoreManager VALUES ('$email', '$store_id')
+
+            SELECT * From Manager WHERE email = '$email' AND status = 'I'
+
+            UPDATE Manager SET status = 'A' WHERE email = '$email'
+
+            SELECT * From Storemanager WHERE email = '$email' AND store_id = '$store_id'
+
+            DELETE FROM StoreManager WHERE store_id = '$store_id' AND email = '$email'
+
+            SELECT * FROM Storemanager WHERE email = '$email'
+
+            UPDATE Manager SET status = 'I' WHERE email = '$email'
+
+
+- update_2_manager_add.php:
+
+            SELECTManager.email,Manager.first_name,Manager.last_name,Manager.status,Storemanager.store_id
+            FROM Manager
+            LEFT OUTER JOIN Storemanager ON Manager.email = Storemanager.email
+            WHERE manager.email = '$email'
+
+            INSERT INTO Manager VALUES ('$email', '$first_name', '$last_name', 'A')
+
+            INSERT INTO Storemanager VALUES ('$email', '$store_id')
+
+            INSERT INTO Manager VALUES ('$email', '$first_name', '$last_name', 'I')
+
+
+- update_2_manager_delete.php:
+
+            SELECTManager.email,Manager.first_name,Manager.last_name,Manager.status,Storemanager.store_id
+            FROM Manager
+            LEFT OUTER JOIN Storemanager ON Manager.email = Storemanager.email
+            WHERE manager.email = '$email'
+
+            SELECT * FROM manager WHERE email = '$email' AND status = 'A'
+
+            DELETE FROM manager WHERE email = '$email'
+
+
+- update_3_population.php:
+            Contains no SQL statement.
+
+
+- update_3_population_change.php:
+
+            SELECT city_population
+            FROM City
+            WHERE City.city = '$city_name' and City.state = '$city_state'
+
+            UPDATE City
+            SET city_population = '$new_population'
+            WHERE City.city = '$city_name' and City.state = '$city_state'
+
+            SELECT city_population
+            FROM City
+            WHERE City.city = '$city_name' and City.state = '$city_state'
+
+=================================================
